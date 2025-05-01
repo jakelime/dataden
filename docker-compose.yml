@@ -1,0 +1,76 @@
+services:
+  nginx:
+    # profiles:
+    #   - "prod"
+    restart: always
+    container_name: nginx
+    build:
+      context: ./src-nginx
+      args:
+        url_docker: ${url_docker_index}
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      ## Maps host dir, mount into to container vol
+      - /var/data/www/static:/www/static
+      - /var/data/www/media:/www/media
+    networks:
+      - dd_net
+
+  pgdb:
+    # profiles:
+    #   - "prod"
+    container_name: pgdb
+    env_file:
+      - path: ./src-pgdb/.env
+    build:
+      context: ./src-pgdb
+      args:
+        url_docker: ${url_docker_index}
+    restart: always
+    ports:
+      - "$PGDB_PORT:$PGDB_PORT"
+    command:
+      - postgres
+      - "-p"
+      - ${PGDB_PORT}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "pg_isready -d jetforgedb -U jetforgeapp -p ${PGDB_PORT}"
+    volumes:
+      - /var/data/postgresql/data:/var/lib/postgresql/data
+    networks:
+      - dd_net
+
+  mgdb:
+    # profiles:
+    #   - "prod"
+    container_name: mgdb
+    env_file:
+      - path: ./src-mgdb/.env
+    build:
+      context: ./src-mgdb
+      args:
+        url_docker: ${url_docker_index}
+    restart: always
+    ports:
+      - "$MONGODB_PORT:$MONGODB_PORT"
+    volumes:
+      - /var/data/mongodb/data/db:/data/db
+      # - mgdb_data:/data/db
+    networks:
+      - dd_net
+    entrypoint:
+      - mongod
+      - --bind_ip
+      - 0.0.0.0
+      - --port
+      - "$MONGODB_PORT"
+      - --auth
+
+networks:
+  dd_net:
+
+volumes:
+  mgdb_data:
