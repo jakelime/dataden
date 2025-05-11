@@ -1,0 +1,3 @@
+[submodule "src-ddcore"]
+	path = src-ddcore
+	url = git@github.com:jakelime/dataden-core.git
